@@ -1,0 +1,42 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/01/Mux8Way16.hdl
+
+/**
+ * 8-way 16-bit multiplexor:
+ * out = a if sel == 000
+ *       b if sel == 001
+ *       etc.
+ *       h if sel == 111
+ */
+
+CHIP Mux8Way16 {
+    IN a[16], b[16], c[16], d[16],
+       e[16], f[16], g[16], h[16],
+       sel[3];
+    OUT out[16];
+
+    PARTS:
+	Not(in=sel[0], out=notsel0);
+	Not(in=sel[1], out=notsel1);
+	Not(in=sel[2], out=notsel2);
+
+	And16xx(a=a, sel1=notsel0, sel2=notsel1, sel3=notsel2, out=pa);
+	And16xx(a=b, sel1=sel[0], sel2=notsel1, sel3=notsel2, out=pb);
+	And16xx(a=c, sel1=notsel0, sel2=sel[1], sel3=notsel2, out=pc);
+	And16xx(a=d, sel1=sel[0], sel2=sel[1], sel3=notsel2, out=pd);
+	And16xx(a=e, sel1=notsel0, sel2=notsel1, sel3=sel[2], out=pe);
+	And16xx(a=f, sel1=sel[0], sel2=notsel1, sel3=sel[2], out=pf);
+	And16xx(a=g, sel1=notsel0, sel2=sel[1], sel3=sel[2], out=pg);
+	And16xx(a=h, sel1=sel[0], sel2=sel[1], sel3=sel[2], out=ph);
+
+	Or16(a=pa, b=pb, out=q1);
+	Or16(a=pc, b=pd, out=q2);
+	Or16(a=pe, b=pf, out=q3);
+	Or16(a=pg, b=ph, out=q4);
+
+	Or16(a=q1, b=q2, out=q5);
+	Or16(a=q3, b=q4, out=q6);
+	Or16(a=q5, b=q6, out=out);
+}
