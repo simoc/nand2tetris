@@ -1,0 +1,10 @@
+/**
+ * If in is negative (high bit is set) then out = 1 else out = 0.
+ */
+CHIP IsNeg16 {
+    IN in[16];
+    OUT out;
+
+    PARTS:
+   Or(a=in[15], b=in[15], out=out);
+}

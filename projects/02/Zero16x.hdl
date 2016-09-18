@@ -1,0 +1,23 @@
+CHIP Zero16x {
+    IN in[16], z;
+    OUT out[16];
+
+    PARTS:
+	Not(in=z, out=notz);
+	And(a=in[0], b=notz, out=out[0]);
+	And(a=in[1], b=notz, out=out[1]);
+	And(a=in[2], b=notz, out=out[2]);
+	And(a=in[3], b=notz, out=out[3]);
+	And(a=in[4], b=notz, out=out[4]);
+	And(a=in[5], b=notz, out=out[5]);
+	And(a=in[6], b=notz, out=out[6]);
+	And(a=in[7], b=notz, out=out[7]);
+	And(a=in[8], b=notz, out=out[8]);
+	And(a=in[9], b=notz, out=out[9]);
+	And(a=in[10], b=notz, out=out[10]);
+	And(a=in[11], b=notz, out=out[11]);
+	And(a=in[12], b=notz, out=out[12]);
+	And(a=in[13], b=notz, out=out[13]);
+	And(a=in[14], b=notz, out=out[14]);
+	And(a=in[15], b=notz, out=out[15]);
+}

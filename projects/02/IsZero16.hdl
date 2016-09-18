@@ -1,0 +1,28 @@
+/**
+ * If in[0..15] are all 0 then out = 1 else out = 0.
+ */
+CHIP IsZero16 {
+    IN in[16];
+    OUT out;
+
+    PARTS:
+   Or(a=in[0], b=in[1], out=x1);
+   Or(a=in[2], b=in[3], out=x2);
+   Or(a=in[4], b=in[5], out=x3);
+   Or(a=in[6], b=in[7], out=x4);
+   Or(a=in[8], b=in[9], out=x5);
+   Or(a=in[10], b=in[11], out=x6);
+   Or(a=in[12], b=in[13], out=x7);
+   Or(a=in[14], b=in[15], out=x8);
+
+   Or(a=x1, b=x2, out=x9);
+   Or(a=x3, b=x4, out=x10);
+   Or(a=x5, b=x6, out=x11);
+   Or(a=x7, b=x8, out=x12);
+
+   Or(a=x9, b=x10, out=x13);
+   Or(a=x11, b=x12, out=x14);
+
+   Or(a=x13, b=x14, out=x15);
+   Not(in=x15, out=out);
+}
