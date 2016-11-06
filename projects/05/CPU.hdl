@@ -71,6 +71,8 @@ CHIP CPU {
 	DRegister(in=bus2, load=flagD2, out=busD);
 
 	ALU(x=busD, y=bus1, zx=flagC1, nx=flagC2, zy=flagC3, ny=flagC4, f=flagC5, no=flagC6, out=bus2, zr=zr, ng=ng);
+
+	// Are we outputting M or not?
 	Mux16(a=inM, b=bus2, sel=flagD3, out=outM);
 
 	// Decide whether to jump, or not.
@@ -83,10 +85,6 @@ CHIP CPU {
 	Or(a=jump1, b=jump2, out=loadPC);
 	Or(a=loadPC, b=jump3, out=loadPC2);
 	Not(in=loadPC2, out=incPC);
-
-	//Mux16(a=busA, b=bus2, sel=flagD1, out=loopA);
-	//Mux16(a=busD, b=bus2, sel=flagD2, out=loopD);
-	//Mux16(a=inM, b=bus2, sel=flagD3, out=outM);
 
 	PC(in=busA, load=loadPC2, inc=incPC, reset=reset, out=pc16);
 	Copy15(in=pc16, out=pc);
