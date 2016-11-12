@@ -1,4 +1,5 @@
 #include <vector>
+#include <iostream>
 
 #include "parser.h"
 
@@ -26,6 +27,7 @@ Parser::hasMoreCommands()
 	bool inComment = false;
 	bool inSymbol = false;
 	bool hasJump = false;
+	bool hasDest = false;
 	bool eol = false;
 	int readCount = 0;
 
@@ -68,28 +70,56 @@ Parser::hasMoreCommands()
 		}
 		else if (c == '(')
 		{
+			if (inSymbol)
+			{
+				std::cerr << "Unexpected: '" << c << "'" << std::endl;
+				return false;
+			}
 			inSymbol = true;
 			m_currentCommandType = L_COMMAND;
 		}
 		else if (c == ')')
 		{
+			if (!inSymbol)
+			{
+				std::cerr << "Unexpected: '" << c << "'" << std::endl;
+				return false;
+			}
 			inSymbol = false;
 		}
 		else if (c == '@')
 		{
+			if (inSymbol)
+			{
+				std::cerr << "Unexpected: '" << c << "'" << std::endl;
+				return false;
+			}
 			inSymbol = true;
 			m_currentCommandType = A_COMMAND;
 		}
 		else if (c == '=')
 		{
+			if (hasDest || hasJump)
+			{
+				std::cerr << "Unexpected: '" << c << "'" << std::endl;
+				return false;
+			}
+
 			/*
 			 * Finished reading dest.
 			 */
 			m_currentDest = token;
 			token.clear();
+			hasDest = true;
 		}
 		else if (c == ';')
 		{
+			if (hasJump)
+			{
+				std::cerr << "Unexpected: '" << c << "'" << std::endl;
+				return false;
+			}
+
 			/*
 			 * Finished reading comp.
 			 */
@@ -102,6 +132,7 @@ Parser::hasMoreCommands()
 			/*
 			 * Skip whitespace.
 			 */
+			inSymbol = false;
 		}
 		else
 		{
@@ -117,15 +148,29 @@ Parser::hasMoreCommands()
 		 * reached the end of line.
 		 */
 		if (hasJump)
+		{
 			m_currentJump = token;
+		}
 		else if (!token.empty())
+		{
+			if (!m_currentComp.empty())
+			{
+				std::cerr << "Unexpected: '" << token << "'" << std::endl;
+				return false;
+			}
 			m_currentComp = token;
+		}
 	}
 	else
 	{
 		/*
 		 * Everything that we read is the symbol.
 		 */
+		if (!m_currentSymbol.empty())
+		{
+			std::cerr << "Unexpected: '" << token << "'" << std::endl;
+			return false;
+		}
 		m_currentSymbol = token;
 	}
 
