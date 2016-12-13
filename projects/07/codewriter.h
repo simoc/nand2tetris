@@ -8,21 +8,23 @@
 class CodeWriter
 {
 public:
-	/*
-	 * Opens the input file/stream and gets ready to write into it.
-	 */
 	CodeWriter();
+
+	/*
+	 * Opens the ouput ASM file/stream and gets ready to write into it.
+	 */
+	void setAsmFilename(const std::string &filename);
+
+	/*
+	 * Was ASM file opened successfully for writing?
+	 */
+	bool open();
 
 	/*
 	 * Informs the code writer that the translation of a new VM file
 	 * is started.
 	 */
-	void setFilename(const std::string &filename);
-
-	/*
-	 * Was file opened successfully?
-	 */
-	bool open();
+	void setVmFilename(const std::string &filename);
 
 	/*
 	 * Writes the assembly code that is the translation of the given
@@ -45,7 +47,8 @@ public:
 private:
 	int m_branchCounter;
 	std::string m_vmFilename;
-	std::ofstream m_vmFs;
+	std::string m_asmFilename;
+	std::ofstream m_asmFs;
 
 	void writeLogic(const std::string &command);
 	void writeUnary(const std::string &command);

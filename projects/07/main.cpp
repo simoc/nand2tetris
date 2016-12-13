@@ -100,7 +100,7 @@ main(int argc, char *argv[])
 			asmFilename = asmFilename.substr(0, dotIndex);
 		asmFilename += ".asm";
 
-		c.setFilename(asmFilename);
+		c.setAsmFilename(asmFilename);
 		c.open();
 		Parser p(vmFilename);
 		if (!p.open())
@@ -118,17 +118,14 @@ main(int argc, char *argv[])
 					std::cerr << "Unknown command" << std::endl;
 					break;
 				case Parser::C_ARITHMETIC:
-					std::cout << "//" << p.arg1() << std::endl;
 					c.writeArithmetic(p.arg1());
 					break;
 				case Parser::C_PUSH:
-					std::cout << "//PUSH " << p.arg1() << " " << p.arg2() << std::endl;
 					
 					index = std::stol(p.arg2(), &index2);
 					c.writePushPop(p.commandType(), p.arg1(), index);
 					break;
 				case Parser::C_POP:
-					std::cout << "//POP " << p.arg1() << " " << p.arg2() << std::endl;
 					index = std::stol(p.arg2(), &index2);
 					c.writePushPop(p.commandType(), p.arg1(), index);
 					break;

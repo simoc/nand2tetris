@@ -23,6 +23,13 @@ public:
 	};
 
 	static const std::string SEGMENT_CONSTANT;
+	static const std::string SEGMENT_LOCAL;
+	static const std::string SEGMENT_ARGUMENT;
+	static const std::string SEGMENT_THIS;
+	static const std::string SEGMENT_THAT;
+	static const std::string SEGMENT_POINTER;
+	static const std::string SEGMENT_TEMP;
+	static const std::string SEGMENT_STATIC;
 
 	/*
 	 * Opens the input file/stream and gets ready to parse it.

@@ -1,6 +1,13 @@
 #include "parser.h"
 
 const std::string Parser::SEGMENT_CONSTANT = "CONSTANT";
+const std::string Parser::SEGMENT_LOCAL = "LOCAL";
+const std::string Parser::SEGMENT_ARGUMENT = "ARGUMENT";
+const std::string Parser::SEGMENT_THIS = "THIS";
+const std::string Parser::SEGMENT_THAT = "THAT";
+const std::string Parser::SEGMENT_POINTER = "POINTER";
+const std::string Parser::SEGMENT_TEMP = "TEMP";
+const std::string Parser::SEGMENT_STATIC = "STATIC";
 
 Parser::Parser(const std::string &filename)
 {
