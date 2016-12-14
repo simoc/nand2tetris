@@ -22,14 +22,15 @@ void
 CodeWriter::setVmFilename(const std::string &filename)
 {
 	/*
-	 * Save VM filename without suffix.
+	 * Save VM filename without suffix and directory path.
 	 */
 	m_vmFilename = filename;
-	size_t index = m_vmFilename.find_last_of(".vm");
-	if (index == std::string::npos)
-		index = m_vmFilename.find_last_of(".VM");
+	size_t index = m_vmFilename.find_last_of('.');
 	if (index != std::string::npos)
 		m_vmFilename = m_vmFilename.substr(0, index);
+	index = m_vmFilename.find_last_of('/');
+	if (index != std::string::npos)
+		m_vmFilename = m_vmFilename.substr(index + 1);
 }
 
 void
@@ -240,6 +241,18 @@ CodeWriter::writePushPop(Parser::COMMAND_TYPE command,
 			m_asmFs << "A=M" << std::endl;
 			m_asmFs << "M=D" << std::endl;
 		}
+		else if (segment == Parser::SEGMENT_POINTER)
+		{
+			m_asmFs << "@" << (index + 3) << std::endl;
+			m_asmFs << "D=M" << std::endl;
+
+			/*
+			 * Save at SP.
+			 */
+			m_asmFs << "@SP" << std::endl;
+			m_asmFs << "A=M" << std::endl;
+			m_asmFs << "M=D" << std::endl;
+		}
 		else if (segment == Parser::SEGMENT_TEMP)
 		{
 			m_asmFs << "@" << (index + 5) << std::endl;
@@ -343,16 +356,16 @@ CodeWriter::writePushPop(Parser::COMMAND_TYPE command,
 		else if (segment == Parser::SEGMENT_STATIC)
 		{
 			/*
-			 * Load address of named symbol.
-			 */
-			m_asmFs << "@" << m_vmFilename << "." << index << std::endl;
-			m_asmFs << "D=A" << std::endl;
-
-			/*
-			 * Save named symbol at address of named symbol.
+			 * Load SP[-1].
 			 */
 			m_asmFs << "@SP" << std::endl;
 			m_asmFs << "A=M-1" << std::endl;
+			m_asmFs << "D=M" << std::endl;
+
+			/*
+			 * Save at address of named symbol.
+			 */
+			m_asmFs << "@" << m_vmFilename << "." << index << std::endl;
 			m_asmFs << "M=D" << std::endl;
 		}
 

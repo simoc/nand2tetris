@@ -100,6 +100,7 @@ main(int argc, char *argv[])
 			asmFilename = asmFilename.substr(0, dotIndex);
 		asmFilename += ".asm";
 
+		c.setVmFilename(vmFilename);
 		c.setAsmFilename(asmFilename);
 		c.open();
 		Parser p(vmFilename);
