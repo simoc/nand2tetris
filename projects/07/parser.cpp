@@ -118,6 +118,30 @@ Parser::commandType()
 		{
 			commandType = C_POP;
 		}
+		else if (token0 == "LABEL")
+		{
+			commandType = C_LABEL;
+		}
+		else if (token0 == "GOTO")
+		{
+			commandType = C_GOTO;
+		}
+		else if (token0 == "IF-GOTO")
+		{
+			commandType = C_IF;
+		}
+		else if (token0 == "FUNCTION")
+		{
+			commandType = C_FUNCTION;
+		}
+		else if (token0 == "RETURN")
+		{
+			commandType = C_RETURN;
+		}
+		else if (token0 == "CALL")
+		{
+			commandType = C_CALL;
+		}
 	}
 	return commandType;
 }

@@ -90,6 +90,8 @@ main(int argc, char *argv[])
 		std::string vmFilename = *it;
 		std::string asmFilename = vmFilename;
 		int index;
+		int numLocals;
+		int numArgs;
 		size_t index2;
 
 		/*
@@ -129,6 +131,26 @@ main(int argc, char *argv[])
 				case Parser::C_POP:
 					index = std::stol(p.arg2(), &index2);
 					c.writePushPop(p.commandType(), p.arg1(), index);
+					break;
+				case Parser::C_LABEL:
+					c.writeLabel(p.arg1());
+					break;
+				case Parser::C_GOTO:
+					c.writeGoto(p.arg1());
+					break;
+				case Parser::C_IF:
+					c.writeIf(p.arg1());
+					break;
+				case Parser::C_FUNCTION:
+					numLocals = std::stol(p.arg2(), &index2);
+					c.writeFunction(p.arg1(), numLocals);
+					break;
+				case Parser::C_RETURN:
+					c.writeReturn();
+					break;
+				case Parser::C_CALL:
+					numArgs = std::stol(p.arg2(), &index2);
+					c.writeCall(p.arg1(), numArgs);
 					break;
 				default:
 					break;

@@ -1,8 +1,12 @@
+#include <sstream>
+
 #include "codewriter.h"
 
 CodeWriter::CodeWriter()
 {
 	m_branchCounter = 0;
+	m_returnAddressCounter = 0;
+	m_functionName = "NULL";
 }
 
 void
@@ -376,6 +380,237 @@ CodeWriter::writePushPop(Parser::COMMAND_TYPE command,
 		m_asmFs << "D=M-1" << std::endl;
 		m_asmFs << "M=D" << std::endl;
 	}
+}
+
+void
+CodeWriter::writeInit()
+{
+	/*
+	 * SP=256
+	 * call Sys.Init
+	 */
+	m_asmFs << "@256" << std::endl;
+	m_asmFs << "D=A" << std::endl;
+	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+	writeCall("Sys.Init", 0);
+}
+
+void
+CodeWriter::writeLabel(const std::string &label)
+{
+	m_asmFs << "// LABEL " << label << std::endl;
+	m_asmFs << "(" << m_functionName << "$" << label << ")" << std::endl;
+}
+
+void
+CodeWriter::writeGoto(const std::string &label)
+{
+	m_asmFs << "// GOTO " << label << std::endl;
+	m_asmFs << "@" << m_functionName << "$" << label << std::endl;
+	m_asmFs << "0;JMP" << std::endl;
+}
+
+void
+CodeWriter::writeIf(const std::string &label)
+{
+	m_asmFs << "// IF-GOTO " << label << std::endl;
+
+	/*
+	 * Decrement SP first.
+	 */
+	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "D=M-1" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * Get previous top element of stack.
+	 */
+	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "A=M" << std::endl;
+	m_asmFs << "D=M" << std::endl;
+
+	/*
+	 * Jump to label if top element is not zero.
+	 */
+	m_asmFs << "@" << m_functionName << "$" << label << std::endl;
+	m_asmFs << "D;JNE" << std::endl;
+}
+
+void
+CodeWriter::pushValue(int value)
+{
+	/*
+	 * Add value to stack.
+	 */
+	m_asmFs << "@" << value << std::endl;
+	m_asmFs << "D=A" << std::endl;
+	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * Increment SP.
+	 */
+	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "D=M+1" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+}
+
+void
+CodeWriter::pushValueAtAddress(const std::string &address)
+{
+	/*
+	 * Add address to stack.
+	 */
+	m_asmFs << "@" << address << std::endl;
+	m_asmFs << "D=M" << std::endl;
+	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * Increment SP.
+	 */
+	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "D=M+1" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+}
+
+void
+CodeWriter::writeCall(const std::string &functionName, int numArgs)
+{
+	std::ostringstream os;
+
+	m_asmFs << "// CALL " << functionName << " " << numArgs << std::endl;
+
+	m_returnAddressCounter++;
+	os << "return-address-" << m_returnAddressCounter;
+
+	pushValueAtAddress(os.str());
+	pushValueAtAddress("LCL");
+	pushValueAtAddress("ARG");
+	pushValueAtAddress("THIS");
+	pushValueAtAddress("THAT");
+
+	/*
+	 * ARG = SP-n-5
+	 */
+	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "D=M" << std::endl;
+	m_asmFs << "@" << (numArgs + 5) << std::endl;
+	m_asmFs << "D=D-A" << std::endl;
+	m_asmFs << "@ARG" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * LCL = SP
+	 */
+	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "D=M" << std::endl;
+	m_asmFs << "@LCL" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	m_asmFs << "@" << m_functionName << std::endl;
+	m_asmFs << "0;JMP" << std::endl;
+
+	m_asmFs << "(" << os.str() << ")" << std::endl;
+}
+
+void
+CodeWriter::writeReturn()
+{
+	m_asmFs << "// RETURN" << std::endl;
+
+	/*
+	 * FRAME = LCL
+	 */
+	m_asmFs << "@LCL" << std::endl;
+	m_asmFs << "D=M" << std::endl;
+	m_asmFs << "@FRAME" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * RET = *(FRAME - 5)
+	 */
+	m_asmFs << "@FRAME" << std::endl;
+	m_asmFs << "D=M" << std::endl;
+	m_asmFs << "@5" << std::endl;
+	m_asmFs << "D=D-A" << std::endl;
+	m_asmFs << "@RET" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * *ARG = pop()
+	 */
+	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "D=M-1" << std::endl;
+	m_asmFs << "@ARG" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * SP = ARG+1
+	 */
+	m_asmFs << "@ARG" << std::endl;
+	m_asmFs << "D=M+1" << std::endl;
+	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * THAT = *(FRAME - 1)
+	 */
+	m_asmFs << "@FRAME" << std::endl;
+	m_asmFs << "D=M-1" << std::endl;
+	m_asmFs << "@THAT" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * THIS = *(FRAME - 2)
+	 */
+	m_asmFs << "@FRAME" << std::endl;
+	m_asmFs << "D=M-1" << std::endl;
+	m_asmFs << "D=D-1" << std::endl;
+	m_asmFs << "@THIS" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * ARG = *(FRAME - 3)
+	 */
+	m_asmFs << "@FRAME" << std::endl;
+	m_asmFs << "D=M-1" << std::endl;
+	m_asmFs << "D=D-1" << std::endl;
+	m_asmFs << "D=D-1" << std::endl;
+	m_asmFs << "@ARG" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * LCL = *(FRAME - 4)
+	 */
+	m_asmFs << "@FRAME" << std::endl;
+	m_asmFs << "D=M-1" << std::endl;
+	m_asmFs << "D=D-1" << std::endl;
+	m_asmFs << "D=D-1" << std::endl;
+	m_asmFs << "D=D-1" << std::endl;
+	m_asmFs << "@LCL" << std::endl;
+	m_asmFs << "M=D" << std::endl;
+
+	/*
+	 * GOTO RET
+	 */
+	m_asmFs << "@RET" << std::endl;
+	m_asmFs << "A=M" << std::endl;
+	m_asmFs << "0;JMP" << std::endl;
+}
+
+void
+CodeWriter::writeFunction(const std::string &functionName, int numLocals)
+{
+	m_asmFs << "// FUNCTION " << functionName << " " << numLocals << std::endl;
+
+	m_asmFs << "(" << functionName << ")" << std::endl;
+	for (int i = 0; i < numLocals; i++)
+	{
+		pushValue(0);
+	}
+	m_functionName = functionName;
 }
 
 void
