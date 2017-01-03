@@ -446,6 +446,7 @@ CodeWriter::pushValue(int value)
 	m_asmFs << "@" << value << std::endl;
 	m_asmFs << "D=A" << std::endl;
 	m_asmFs << "@SP" << std::endl;
+	m_asmFs << "A=M" << std::endl;
 	m_asmFs << "M=D" << std::endl;
 
 	/*
@@ -523,6 +524,7 @@ CodeWriter::writeReturn()
 	/*
 	 * FRAME = LCL
 	 */
+	m_asmFs << "// FRAME = LCL" << std::endl;
 	m_asmFs << "@LCL" << std::endl;
 	m_asmFs << "D=M" << std::endl;
 	m_asmFs << "@FRAME" << std::endl;
@@ -531,24 +533,30 @@ CodeWriter::writeReturn()
 	/*
 	 * RET = *(FRAME - 5)
 	 */
+	m_asmFs << "// RET = *(FRAME - 5)" << std::endl;
 	m_asmFs << "@FRAME" << std::endl;
 	m_asmFs << "D=M" << std::endl;
 	m_asmFs << "@5" << std::endl;
-	m_asmFs << "D=D-A" << std::endl;
+	m_asmFs << "A=D-A" << std::endl;
+	m_asmFs << "D=M" << std::endl;
 	m_asmFs << "@RET" << std::endl;
 	m_asmFs << "M=D" << std::endl;
 
 	/*
 	 * *ARG = pop()
 	 */
+	m_asmFs << "// *ARG = pop()" << std::endl;
 	m_asmFs << "@SP" << std::endl;
-	m_asmFs << "D=M-1" << std::endl;
+	m_asmFs << "A=M-1" << std::endl;
+	m_asmFs << "D=M" << std::endl;
 	m_asmFs << "@ARG" << std::endl;
+	m_asmFs << "A=M" << std::endl;
 	m_asmFs << "M=D" << std::endl;
 
 	/*
 	 * SP = ARG+1
 	 */
+	m_asmFs << "// SP = ARG+1" << std::endl;
 	m_asmFs << "@ARG" << std::endl;
 	m_asmFs << "D=M+1" << std::endl;
 	m_asmFs << "@SP" << std::endl;
@@ -557,44 +565,55 @@ CodeWriter::writeReturn()
 	/*
 	 * THAT = *(FRAME - 1)
 	 */
+	m_asmFs << "// THAT = *(FRAME - 1)" << std::endl;
 	m_asmFs << "@FRAME" << std::endl;
-	m_asmFs << "D=M-1" << std::endl;
+	m_asmFs << "D=M" << std::endl;
+	m_asmFs << "@1" << std::endl;
+	m_asmFs << "A=D-A" << std::endl;
+	m_asmFs << "D=M" << std::endl;
 	m_asmFs << "@THAT" << std::endl;
 	m_asmFs << "M=D" << std::endl;
 
 	/*
 	 * THIS = *(FRAME - 2)
 	 */
+	m_asmFs << "// THIS = *(FRAME - 2)" << std::endl;
 	m_asmFs << "@FRAME" << std::endl;
-	m_asmFs << "D=M-1" << std::endl;
-	m_asmFs << "D=D-1" << std::endl;
+	m_asmFs << "D=M" << std::endl;
+	m_asmFs << "@2" << std::endl;
+	m_asmFs << "A=D-A" << std::endl;
+	m_asmFs << "D=M" << std::endl;
 	m_asmFs << "@THIS" << std::endl;
 	m_asmFs << "M=D" << std::endl;
 
 	/*
 	 * ARG = *(FRAME - 3)
 	 */
+	m_asmFs << "// ARG = *(FRAME - 3)" << std::endl;
 	m_asmFs << "@FRAME" << std::endl;
-	m_asmFs << "D=M-1" << std::endl;
-	m_asmFs << "D=D-1" << std::endl;
-	m_asmFs << "D=D-1" << std::endl;
+	m_asmFs << "D=M" << std::endl;
+	m_asmFs << "@3" << std::endl;
+	m_asmFs << "A=D-A" << std::endl;
+	m_asmFs << "D=M" << std::endl;
 	m_asmFs << "@ARG" << std::endl;
 	m_asmFs << "M=D" << std::endl;
 
 	/*
 	 * LCL = *(FRAME - 4)
 	 */
+	m_asmFs << "// LCL = *(FRAME - 4)" << std::endl;
 	m_asmFs << "@FRAME" << std::endl;
-	m_asmFs << "D=M-1" << std::endl;
-	m_asmFs << "D=D-1" << std::endl;
-	m_asmFs << "D=D-1" << std::endl;
-	m_asmFs << "D=D-1" << std::endl;
+	m_asmFs << "D=M" << std::endl;
+	m_asmFs << "@4" << std::endl;
+	m_asmFs << "A=D-A" << std::endl;
+	m_asmFs << "D=M" << std::endl;
 	m_asmFs << "@LCL" << std::endl;
 	m_asmFs << "M=D" << std::endl;
 
 	/*
 	 * GOTO RET
 	 */
+	m_asmFs << "// GOTO RET" << std::endl;
 	m_asmFs << "@RET" << std::endl;
 	m_asmFs << "A=M" << std::endl;
 	m_asmFs << "0;JMP" << std::endl;
@@ -606,10 +625,13 @@ CodeWriter::writeFunction(const std::string &functionName, int numLocals)
 	m_asmFs << "// FUNCTION " << functionName << " " << numLocals << std::endl;
 
 	m_asmFs << "(" << functionName << ")" << std::endl;
+#if 0
+	// SimpleFunction.vm already includes commands to push local values onto stack
 	for (int i = 0; i < numLocals; i++)
 	{
 		pushValue(0);
 	}
+#endif
 	m_functionName = functionName;
 }
 
