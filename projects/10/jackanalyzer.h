@@ -10,12 +10,14 @@ class JackAnalyzer
 {
 private:
 	bool isOp(char symbol);
+	bool isUnaryOp(char symbol);
 	bool advanceToken(JackTokenizer &jt);
 	bool compileSymbol(JackTokenizer &jt, CompilationEngine &compiler, char symbol);
 	bool compileTerm(JackTokenizer &jt, CompilationEngine &compiler);
 	bool compileExpression(JackTokenizer &jt, CompilationEngine &compiler);
 	bool compileExpressionList(JackTokenizer &jt, CompilationEngine &compiler);
 	bool compileLetStatement(JackTokenizer &jt, CompilationEngine &compiler);
+	bool compileIfStatement(JackTokenizer &jt, CompilationEngine &compiler);
 	bool compileWhileStatement(JackTokenizer &jt, CompilationEngine &compiler);
 	bool compileDoStatement(JackTokenizer &jt, CompilationEngine &compiler);
 	bool compileReturnStatement(JackTokenizer &jt, CompilationEngine &compiler);

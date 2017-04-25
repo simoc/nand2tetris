@@ -15,7 +15,9 @@ public:
 
 	virtual void endCompileClass() = 0;
 
-	virtual void compileClassVarDec() = 0;
+	virtual void beginCompileClassVarDec() = 0;
+
+	virtual void endCompileClassVarDec() = 0;
 
 	virtual void beginCompileSubroutineDec(JackTokenizer::KEYWORD_TYPE keyword) = 0;
 	virtual void endCompileSubroutineDec() = 0;
@@ -46,7 +48,9 @@ public:
 
 	virtual void compileReturnStatement() = 0;
 
-	virtual void compileIf() = 0;
+	virtual void beginCompileIf() = 0;
+
+	virtual void endCompileIf() = 0;
 
 	virtual void beginCompileExpression() = 0;
 

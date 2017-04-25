@@ -14,7 +14,9 @@ public:
 
 	void endCompileClass();
 
-	void compileClassVarDec();
+	void beginCompileClassVarDec();
+
+	void endCompileClassVarDec();
 
 	void beginCompileSubroutineDec(JackTokenizer::KEYWORD_TYPE keyword);
 
@@ -46,7 +48,9 @@ public:
 
 	void compileReturnStatement();
 
-	void compileIf();
+	void beginCompileIf();
+
+	void endCompileIf();
 
 	void beginCompileExpression();
 
@@ -77,7 +81,6 @@ private:
 
 	std::ofstream m_xmlFs;
 
-	bool m_inStatements;
 	bool m_inParameterList;
 	bool m_inVarDec;
 	bool m_inReturn;

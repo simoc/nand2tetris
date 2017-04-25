@@ -33,6 +33,57 @@ JackAnalyzer::compileClassVarDec(JackTokenizer &jt, CompilationEngine &compiler)
 	/*
 	 * ('static' | 'field') type varName (',' varName)* ';'
 	 */
+	compiler.beginCompileClassVarDec();
+
+	if (jt.tokenType() == JackTokenizer::T_KEYWORD &&
+		jt.keyword() == JackTokenizer::K_STATIC)
+	{
+		compiler.compileTerm(jt.keyword());
+
+		if (!advanceToken(jt))
+			return false;
+	}
+	else if (jt.tokenType() == JackTokenizer::T_KEYWORD &&
+		jt.keyword() == JackTokenizer::K_FIELD)
+	{
+		compiler.compileTerm(jt.keyword());
+
+		if (!advanceToken(jt))
+			return false;
+	}
+
+	if (!compileType(jt, compiler))
+		return false;
+
+	if (!advanceToken(jt))
+		return false;
+
+	if (!compileVarName(jt, compiler))
+		return false;
+
+	if (!advanceToken(jt))
+		return false;
+
+	if (!(jt.tokenType() == JackTokenizer::T_SYMBOL && jt.symbol() == ';'))
+	{
+		if (!compileSymbol(jt, compiler, ','))
+			return false;
+
+		if (!advanceToken(jt))
+			return false;
+
+		if (!compileVarName(jt, compiler))
+			return false;
+
+		if (!advanceToken(jt))
+			return false;
+	}
+
+	if (!compileSymbol(jt, compiler, ';'))
+		return false;
+
+	compiler.endCompileClassVarDec();
+
 	return true;
 }
 
@@ -127,8 +178,14 @@ JackAnalyzer::compileParameterList(JackTokenizer &jt, CompilationEngine &compile
 		if (!advanceToken(jt))
 			return false;
 
-		if (!compileSymbol(jt, compiler, ','))
+		if (jt.tokenType() == JackTokenizer::T_SYMBOL && jt.symbol() == ')')
 			break;
+
+		if (!compileSymbol(jt, compiler, ','))
+			return false;
+
+		if (!advanceToken(jt))
+			return false;
 	}
 
 	return true;
@@ -152,6 +209,9 @@ JackAnalyzer::compileExpressionList(JackTokenizer &jt, CompilationEngine &compil
 				break;
 			}
 			compileSymbol(jt, compiler, ',');
+
+			if (!advanceToken(jt))
+				return false;
 		}
 	}
 
@@ -189,9 +249,10 @@ JackAnalyzer::compileTerm(JackTokenizer &jt, CompilationEngine &compiler)
 		case JackTokenizer::K_FALSE:
 		case JackTokenizer::K_NULL:
 		case JackTokenizer::K_THIS:
-			compiler.compileTerm(jt.stringVal());
+			compiler.compileTerm(jt.keyword());
 			if (!advanceToken(jt))
 				return false;
+			break;
 		default:
 			std::cerr << "Expected term: " << jt.getFilenameAndLineNumber() << std::endl;
 			return false;
@@ -250,11 +311,42 @@ JackAnalyzer::compileTerm(JackTokenizer &jt, CompilationEngine &compiler)
 			if (!advanceToken(jt))
 				return false;
 		}
-		else if (jt.tokenType() == JackTokenizer::T_SYMBOL &&
-			jt.symbol() == '(')
-		{
-		}
 
+		break;
+	case JackTokenizer::T_SYMBOL:
+		if (isUnaryOp(jt.symbol()))
+		{
+			if (!compileSymbol(jt, compiler, jt.symbol()))
+				return false;
+
+			if (!advanceToken(jt))
+				return false;
+
+			if (!compileTerm(jt, compiler))
+				return false;
+		}
+		else if (jt.symbol() == '(')
+		{
+			if (!compileSymbol(jt, compiler, jt.symbol()))
+				return false;
+
+			if (!advanceToken(jt))
+				return false;
+
+			if (!compileExpression(jt, compiler))
+				return false;
+
+			if (!compileSymbol(jt, compiler, jt.symbol()))
+				return false;
+
+			if (!advanceToken(jt))
+				return false;
+		}
+		else
+		{
+			std::cerr << "Expected term: " << jt.getFilenameAndLineNumber() << std::endl;
+			return false;
+		}
 		break;
 	default:
 		return false;
@@ -277,6 +369,12 @@ JackAnalyzer::isOp(char symbol)
 		symbol == '<' ||
 		symbol == '>' ||
 		symbol == '=');
+}
+
+bool
+JackAnalyzer::isUnaryOp(char symbol)
+{
+	return (symbol == '-' || symbol == '~');
 }
 
 bool
@@ -357,6 +455,77 @@ JackAnalyzer::compileLetStatement(JackTokenizer &jt, CompilationEngine &compiler
 		return false;
 
 	compiler.endCompileLet();
+
+	return true;
+}
+
+bool
+JackAnalyzer::compileIfStatement(JackTokenizer &jt, CompilationEngine &compiler)
+{
+	/*
+	 * 'if' '(' expression ')' '{' statements '}'
+	 * ('else' '{' statements '}'
+	 */
+	compiler.beginCompileIf();
+	compiler.compileTerm(JackTokenizer::K_IF);
+
+	if (!advanceToken(jt))
+		return false;
+
+	if (!compileSymbol(jt, compiler, '('))
+		return false;
+
+	if (!advanceToken(jt))
+		return false;
+
+	if (!compileExpression(jt, compiler))
+		return false;
+
+	if (!compileSymbol(jt, compiler, ')'))
+		return false;
+
+	if (!advanceToken(jt))
+		return false;
+
+	if (!compileSymbol(jt, compiler, '{'))
+		return false;
+
+	if (!advanceToken(jt))
+		return false;
+
+	if (!compileStatements(jt, compiler))
+		return false;
+
+	if (!compileSymbol(jt, compiler, '}'))
+		return false;
+
+	if (!advanceToken(jt))
+		return false;
+
+	if (jt.tokenType() == JackTokenizer::T_KEYWORD &&
+		jt.keyword() == JackTokenizer::K_ELSE)
+	{
+		compiler.compileTerm(jt.keyword());
+
+		if (!advanceToken(jt))
+			return false;
+
+		if (!compileSymbol(jt, compiler, '{'))
+			return false;
+
+		if (!advanceToken(jt))
+			return false;
+
+		if (!compileStatements(jt, compiler))
+			return false;
+
+		if (!compileSymbol(jt, compiler, '}'))
+			return false;
+
+		if (!advanceToken(jt))
+			return false;
+	}
+	compiler.endCompileIf();
 
 	return true;
 }
@@ -529,6 +698,8 @@ JackAnalyzer::compileStatement(JackTokenizer &jt, CompilationEngine &compiler)
 			return false;
 		break;
 	case JackTokenizer::K_IF:
+		if (!compileIfStatement(jt, compiler))
+			return false;
 		break;
 	case JackTokenizer::K_WHILE:
 		if (!compileWhileStatement(jt, compiler))
@@ -771,19 +942,28 @@ JackAnalyzer::compile(JackTokenizer &jt, CompilationEngine &compiler)
 
 	do
 	{
-		switch (jt.keyword())
+		if (jt.tokenType() == JackTokenizer::T_IDENTIFIER)
 		{
-		case JackTokenizer::K_VAR:
 			compileClassVarDec(jt, compiler);
-			break;
-		case JackTokenizer::K_METHOD:
-		case JackTokenizer::K_FUNCTION:
-		case JackTokenizer::K_CONSTRUCTOR:
-			compileSubroutineDec(jt, compiler);
-			break;
-		default:
-			std::cerr << "Expected subroutine declaration: " << jt.getFilenameAndLineNumber() << std::endl;
-			return false;
+		}
+		else
+		{
+
+			switch (jt.keyword())
+			{
+			case JackTokenizer::K_STATIC:
+			case JackTokenizer::K_FIELD:
+				compileClassVarDec(jt, compiler);
+				break;
+			case JackTokenizer::K_METHOD:
+			case JackTokenizer::K_FUNCTION:
+			case JackTokenizer::K_CONSTRUCTOR:
+				compileSubroutineDec(jt, compiler);
+				break;
+			default:
+				std::cerr << "Expected subroutine declaration: " << jt.getFilenameAndLineNumber() << std::endl;
+				return false;
+			}
 		}
 
 		if (!advanceToken(jt))

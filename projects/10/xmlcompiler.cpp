@@ -4,7 +4,6 @@ XmlCompiler::XmlCompiler(const std::string &filename)
 {
 	m_xmlFs.open(filename.c_str());
 	m_indent = 0;
-	m_inStatements = false;
 	m_inParameterList = false;
 	m_inVarDec = false;
 	m_inReturn = false;
@@ -41,13 +40,19 @@ XmlCompiler::endCompileClass()
 }
 
 void
-XmlCompiler::compileClassVarDec()
+XmlCompiler::beginCompileClassVarDec()
 {
 	indent();
 	m_xmlFs << "<classVarDec>" << std::endl;
 	m_indent += 2;
+}
+
+void
+XmlCompiler::endCompileClassVarDec()
+{
+	m_indent -= 2;
 	indent();
-	m_xmlFs << "<keyword> field </keyword>" << std::endl;
+	m_xmlFs << "</classVarDec>" << std::endl;
 }
 
 void
@@ -106,6 +111,7 @@ XmlCompiler::compileParameterList()
 {
 	indent();
 	m_xmlFs << "<parameterList>" << std::endl;
+	m_indent += 2;
 	m_inParameterList = true;
 }
 
@@ -140,7 +146,6 @@ XmlCompiler::beginCompileStatements()
 	indent();
 	m_xmlFs << "<statements>" << std::endl;
 	m_indent += 2;
-	m_inStatements = true;
 }
 
 void
@@ -209,11 +214,19 @@ XmlCompiler::compileReturnStatement()
 }
 
 void
-XmlCompiler::compileIf()
+XmlCompiler::beginCompileIf()
 {
 	indent();
-	m_xmlFs << "<if>" << std::endl;
+	m_xmlFs << "<ifStatement>" << std::endl;
 	m_indent += 2;
+}
+
+void
+XmlCompiler::endCompileIf()
+{
+	m_indent -= 2;
+	indent();
+	m_xmlFs << "</ifStatement>" << std::endl;
 }
 
 void
@@ -261,24 +274,44 @@ XmlCompiler::compileTerm(JackTokenizer::KEYWORD_TYPE keyword)
 	indent();
 	if (keyword == JackTokenizer::K_CLASS)
 		m_xmlFs << "<keyword> class </keyword>" << std::endl;
-	if (keyword == JackTokenizer::K_VOID)
-		m_xmlFs << "<keyword> void </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_METHOD)
+		m_xmlFs << "<keyword> method </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_FUNCTION)
+		m_xmlFs << "<keyword> function </keyword>" << std::endl;
 	else if (keyword == JackTokenizer::K_INT)
 		m_xmlFs << "<keyword> int </keyword>" << std::endl;
-	else if (keyword == JackTokenizer::K_CHAR)
-		m_xmlFs << "<keyword> char </keyword>" << std::endl;
 	else if (keyword == JackTokenizer::K_BOOLEAN)
 		m_xmlFs << "<keyword> boolean </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_CHAR)
+		m_xmlFs << "<keyword> char </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_VOID)
+		m_xmlFs << "<keyword> void </keyword>" << std::endl;
 	else if (keyword == JackTokenizer::K_VAR)
 		m_xmlFs << "<keyword> var </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_STATIC)
+		m_xmlFs << "<keyword> static </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_FIELD)
+		m_xmlFs << "<keyword> field </keyword>" << std::endl;
 	else if (keyword == JackTokenizer::K_LET)
 		m_xmlFs << "<keyword> let </keyword>" << std::endl;
-	else if (keyword == JackTokenizer::K_WHILE)
-		m_xmlFs << "<keyword> while </keyword>" << std::endl;
 	else if (keyword == JackTokenizer::K_DO)
 		m_xmlFs << "<keyword> do </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_IF)
+		m_xmlFs << "<keyword> if </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_ELSE)
+		m_xmlFs << "<keyword> else </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_WHILE)
+		m_xmlFs << "<keyword> while </keyword>" << std::endl;
 	else if (keyword == JackTokenizer::K_RETURN)
 		m_xmlFs << "<keyword> return </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_TRUE)
+		m_xmlFs << "<keyword> true </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_FALSE)
+		m_xmlFs << "<keyword> false </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_NULL)
+		m_xmlFs << "<keyword> null </keyword>" << std::endl;
+	else if (keyword == JackTokenizer::K_THIS)
+		m_xmlFs << "<keyword> this </keyword>" << std::endl;
 }
 
 void
@@ -288,6 +321,7 @@ XmlCompiler::compileTerm(char term)
 	{
 		if (m_inParameterList)
 		{
+			m_indent -= 2;
 			indent();
 			m_xmlFs << "</parameterList>" << std::endl;
 			m_inParameterList = false;
@@ -304,6 +338,8 @@ XmlCompiler::compileTerm(char term)
 		m_xmlFs << "&lt;";
 	else if (term == '>')
 		m_xmlFs << "&gt;";
+	else if (term == '&')
+		m_xmlFs << "&amp;";
 	else
 		m_xmlFs << term;
 	m_xmlFs << " </symbol> " << std::endl;
