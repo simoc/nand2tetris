@@ -26,9 +26,13 @@ public:
 
 	virtual void endCompileSubroutineBody() = 0;
 
-	virtual void compileParameterList() = 0;
+	virtual void beginCompileParameterList() = 0;
 
-	virtual void compileVarDec() = 0;
+	virtual void endCompileParameterList() = 0;
+
+	virtual void beginCompileVarDec() = 0;
+
+	virtual void endCompileVarDec() = 0;
 
 	virtual void beginCompileStatements() = 0;
 
@@ -46,7 +50,9 @@ public:
 
 	virtual void endCompileWhile() = 0;
 
-	virtual void compileReturnStatement() = 0;
+	virtual void beginCompileReturnStatement() = 0;
+
+	virtual void endCompileReturnStatement() = 0;
 
 	virtual void beginCompileIf() = 0;
 

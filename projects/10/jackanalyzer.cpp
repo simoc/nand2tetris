@@ -159,13 +159,16 @@ JackAnalyzer::compileVarName(JackTokenizer &jt, CompilationEngine &compiler)
 bool
 JackAnalyzer::compileParameterList(JackTokenizer &jt, CompilationEngine &compiler)
 {
-	compiler.compileParameterList();
+	compiler.beginCompileParameterList();
 
 	/*
 	 * ((type varName) (',' type varName)*)?
 	 */
 	if (jt.tokenType() == JackTokenizer::T_SYMBOL && jt.symbol() == ')')
+	{
+		compiler.endCompileParameterList();
 		return true;
+	}
 
 	while (compileType(jt, compiler))
 	{
@@ -188,6 +191,7 @@ JackAnalyzer::compileParameterList(JackTokenizer &jt, CompilationEngine &compile
 			return false;
 	}
 
+	compiler.endCompileParameterList();
 	return true;
 }
 
@@ -653,7 +657,7 @@ JackAnalyzer::compileReturnStatement(JackTokenizer &jt, CompilationEngine &compi
 	/*
 	 * 'do' subroutineCall ';'
 	 */
-	compiler.compileReturnStatement();
+	compiler.beginCompileReturnStatement();
 	compiler.compileTerm(JackTokenizer::K_RETURN);
 
 	if (!advanceToken(jt))
@@ -675,6 +679,8 @@ JackAnalyzer::compileReturnStatement(JackTokenizer &jt, CompilationEngine &compi
 
 	if (!advanceToken(jt))
 		return false;
+
+	compiler.endCompileReturnStatement();
 
 	return true;
 }
@@ -745,7 +751,7 @@ JackAnalyzer::compileVarDec(JackTokenizer &jt, CompilationEngine &compiler)
 	if (jt.tokenType() == JackTokenizer::T_KEYWORD &&
 		jt.keyword() == JackTokenizer::K_VAR)
 	{
-		compiler.compileVarDec();
+		compiler.beginCompileVarDec();
 		compiler.compileTerm(jt.keyword());
 	}
 	else
@@ -793,6 +799,8 @@ JackAnalyzer::compileVarDec(JackTokenizer &jt, CompilationEngine &compiler)
 		std::cerr << "Expected variable name: " << jt.getFilenameAndLineNumber() << std::endl;
 		return false;
 	}
+
+	compiler.endCompileVarDec();
 
 	return true;
 }

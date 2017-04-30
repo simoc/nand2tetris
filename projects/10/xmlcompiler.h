@@ -22,13 +22,17 @@ public:
 
 	void endCompileSubroutineDec();
 
-	void compileParameterList();
+	void beginCompileParameterList();
+
+	void endCompileParameterList();
 
 	void beginCompileSubroutineBody();
 
 	void endCompileSubroutineBody();
 
-	void compileVarDec();
+	void beginCompileVarDec();
+
+	void endCompileVarDec();
 
 	void beginCompileStatements();
 
@@ -46,7 +50,9 @@ public:
 
 	void endCompileWhile();
 
-	void compileReturnStatement();
+	void beginCompileReturnStatement();
+
+	void endCompileReturnStatement();
 
 	void beginCompileIf();
 
@@ -80,10 +86,6 @@ private:
 	void indent();
 
 	std::ofstream m_xmlFs;
-
-	bool m_inParameterList;
-	bool m_inVarDec;
-	bool m_inReturn;
 
 	int m_indent;
 

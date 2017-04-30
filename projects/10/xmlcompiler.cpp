@@ -4,9 +4,6 @@ XmlCompiler::XmlCompiler(const std::string &filename)
 {
 	m_xmlFs.open(filename.c_str());
 	m_indent = 0;
-	m_inParameterList = false;
-	m_inVarDec = false;
-	m_inReturn = false;
 }
 
 XmlCompiler::~XmlCompiler()
@@ -107,12 +104,19 @@ XmlCompiler::endCompileSubroutineBody()
 }
 
 void
-XmlCompiler::compileParameterList()
+XmlCompiler::beginCompileParameterList()
 {
 	indent();
 	m_xmlFs << "<parameterList>" << std::endl;
 	m_indent += 2;
-	m_inParameterList = true;
+}
+
+void
+XmlCompiler::endCompileParameterList()
+{
+	m_indent -= 2;
+	indent();
+	m_xmlFs << "</parameterList>" << std::endl;
 }
 
 void
@@ -132,12 +136,19 @@ XmlCompiler::endCompileExpressionList()
 }
 
 void
-XmlCompiler::compileVarDec()
+XmlCompiler::beginCompileVarDec()
 {
 	indent();
 	m_xmlFs << "<varDec>" << std::endl;
 	m_indent += 2;
-	m_inVarDec = true;
+}
+
+void
+XmlCompiler::endCompileVarDec()
+{
+	m_indent -= 2;
+	indent();
+	m_xmlFs << "</varDec>" << std::endl;
 }
 
 void
@@ -205,12 +216,19 @@ XmlCompiler::endCompileWhile()
 }
 
 void
-XmlCompiler::compileReturnStatement()
+XmlCompiler::beginCompileReturnStatement()
 {
 	indent();
 	m_xmlFs << "<returnStatement>" << std::endl;
 	m_indent += 2;
-	m_inReturn = true;
+}
+
+void
+XmlCompiler::endCompileReturnStatement()
+{
+	m_indent -= 2;
+	indent();
+	m_xmlFs << "</returnStatement>" << std::endl;
 }
 
 void
@@ -317,17 +335,6 @@ XmlCompiler::compileTerm(JackTokenizer::KEYWORD_TYPE keyword)
 void
 XmlCompiler::compileTerm(char term)
 {
-	if (term == ')')
-	{
-		if (m_inParameterList)
-		{
-			m_indent -= 2;
-			indent();
-			m_xmlFs << "</parameterList>" << std::endl;
-			m_inParameterList = false;
-		}
-	}
-
 	indent();
 	m_xmlFs << "<symbol> ";
 
@@ -343,24 +350,6 @@ XmlCompiler::compileTerm(char term)
 	else
 		m_xmlFs << term;
 	m_xmlFs << " </symbol> " << std::endl;
-
-	if (term == ';')
-	{
-		if (m_inVarDec)
-		{
-			m_indent -= 2;
-			indent();
-			m_xmlFs << "</varDec>" << std::endl;
-			m_inVarDec = false;
-		}
-		if (m_inReturn)
-		{
-			m_indent -= 2;
-			indent();
-			m_xmlFs << "</returnStatement>" << std::endl;
-			m_inReturn = false;
-		}
-	}
 }
 
 void
