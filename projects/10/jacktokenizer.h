@@ -43,7 +43,8 @@ public:
 		K_TRUE,
 		K_FALSE,
 		K_NULL,
-		K_THIS
+		K_THIS,
+		K_ARG
 	};
 
 	/*

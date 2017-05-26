@@ -2,7 +2,16 @@
 
 XmlCompiler::XmlCompiler(const std::string &filename)
 {
-	m_xmlFs.open(filename.c_str());
+	/*
+	 * Replace .jack suffix with .xml.
+	 */
+	std::string xmlFilename = filename;
+	size_t dotIndex = xmlFilename.find_last_of('.');
+	if (dotIndex != std::string::npos)
+		xmlFilename = xmlFilename.substr(0, dotIndex);
+	xmlFilename += ".xml";
+
+	m_xmlFs.open(xmlFilename.c_str());
 	m_indent = 0;
 }
 

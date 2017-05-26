@@ -10,6 +10,7 @@
 
 #include "jacktokenizer.h"
 #include "xmlcompiler.h"
+#include "vmcompiler.h"
 #include "jackanalyzer.h"
 
 /*
@@ -42,25 +43,52 @@ endsWith(const std::string &str, const std::string &suffix)
 		index + suffix.length() == str.length());
 }
 
+void
+usage(const char *programName)
+{
+	std::cerr << "Usage: " << programName << " [-xml | -vm] filename.jack|directory" << std::endl;
+	std::cerr << "Jack language compiler from www.nand2tetris.org Chapters 10-11" << std::endl;
+	std::cerr << "Output written to filename.xml or filename.vm" << std::endl;
+}
+
 int
 main(int argc, char *argv[])
 {
 	int status = 1;
 	std::string filename;
+	std::string compileOption = "xml";
 	std::string dirname;
 	std::vector<std::string> jackFilenames;
 	std::vector<std::string>::iterator it;
 
-	if (argc != 2)
+	if (argc < 2)
 	{
-		std::cerr << "Usage: " << argv[0] << " filename.jack|directory" << std::endl;
-		std::cerr << "Jack language compiler from www.nand2tetris.org Chapters 10-11" << std::endl;
-		std::cerr << "Output written to filename.xml" << std::endl;
+		usage(argv[0]);
 		goto CLEANUP;
 
 	}
 
 	filename = argv[1];
+	if (filename == "-xml")
+	{
+		compileOption = "xml";
+		if (argc < 3)
+		{
+			usage(argv[0]);
+			goto CLEANUP;
+		}
+		filename = argv[2];
+	}
+	else if (filename == "-vm")
+	{
+		compileOption = "vm";
+		if (argc < 3)
+		{
+			usage(argv[0]);
+			goto CLEANUP;
+		}
+		filename = argv[2];
+	}
 
 	if (isDir(filename))
 	{
@@ -93,16 +121,6 @@ main(int argc, char *argv[])
 	while (it != jackFilenames.end())
 	{
 		std::string jackFilename = *it;
-		std::string xmlFilename = jackFilename;
-		std::ofstream xmlFs;
-
-		/*
-		 * Replace .jack suffix with _gen.xml.
-		 */
-		size_t dotIndex = xmlFilename.find_last_of('.');
-		if (dotIndex != std::string::npos)
-			xmlFilename = xmlFilename.substr(0, dotIndex);
-		xmlFilename += ".xml";
 
 		JackTokenizer jt(jackFilename);
 		if (!jt.open())
@@ -111,12 +129,22 @@ main(int argc, char *argv[])
 			goto CLEANUP;
 		}
 
-		XmlCompiler xmlCompiler(xmlFilename);
-
 		JackAnalyzer ja;
 
-		if (!ja.compile(jt, xmlCompiler))
-			goto CLEANUP;
+		if (compileOption == "xml")
+		{
+			XmlCompiler xmlCompiler(jackFilename);
+
+			if (!ja.compile(jt, xmlCompiler))
+				goto CLEANUP;
+		}
+		else
+		{
+			VmCompiler vmCompiler(jackFilename);
+
+			if (!ja.compile(jt, vmCompiler))
+				goto CLEANUP;
+		}
 
 		it++;
 	}
