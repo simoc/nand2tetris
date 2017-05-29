@@ -90,15 +90,20 @@ private:
 
 	std::ofstream m_vmFs;
 
+	int32_t m_labelCounter;
+
 	bool m_atClass;
 	bool m_atSubroutineType;
 	bool m_atSubroutineName;
 	bool m_atSubroutineStatements;
 	bool m_atLetLeftHandSide;
+	bool m_atIfStatement;
+	bool m_atWhileStatement;
 	bool m_inVarDec;
 	bool m_inClassVarDec;
 	bool m_inParameterList;
 	bool m_inReturnStatement;
+	bool m_hasReturnExpression;
 
 	JackTokenizer::KEYWORD_TYPE m_subroutineType;
 	std::string m_className;
@@ -108,5 +113,8 @@ private:
 	std::string m_subroutineVarType;
 	std::string m_identifier;
 	std::vector<std::string> m_expressionStack;
+	std::vector<int32_t> m_ifStack;
+	std::vector<int32_t> m_elseStack;
+	std::vector<int32_t> m_loopStack;
 	SymbolTable m_symbolTable;
 };

@@ -61,10 +61,12 @@ private:
 	/*
 	 * Identifiers with class scope (STATIC and FIELD types).
 	 */
-	std::map<std::string, struct Identifier> m_classTable;
+	std::map<std::string, struct Identifier> m_staticTable;
+	std::map<std::string, struct Identifier> m_fieldTable;
 
 	/*
 	 * Identifiers with subroutine scope (ARG and VAR types).
 	 */
-	std::map<std::string, struct Identifier> m_subroutineTable;
+	std::map<std::string, struct Identifier> m_argTable;
+	std::map<std::string, struct Identifier> m_varTable;
 };

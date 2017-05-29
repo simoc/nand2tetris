@@ -15,15 +15,20 @@ VmCompiler::VmCompiler(const std::string &filename)
 
 	m_vmFs.open(vmFilename.c_str());
 
+	m_labelCounter = 0;
+
 	m_atClass = false;
 	m_atSubroutineType = false;
 	m_atSubroutineName = false;
 	m_atSubroutineStatements = false;
 	m_atLetLeftHandSide = false;
+	m_atIfStatement = false;
+	m_atWhileStatement = false;
 	m_inVarDec = false;
 	m_inClassVarDec = false;
 	m_inParameterList = false;
 	m_inReturnStatement = false;
+	m_hasReturnExpression = false;
 
 	m_subroutineType = JackTokenizer::K_VOID;
 }
@@ -168,6 +173,22 @@ VmCompiler::beginCompileStatements()
 			m_symbolTable.varCount(JackTokenizer::K_VAR) << std::endl;
 		m_atSubroutineStatements = false;
 	}
+	else if (m_atWhileStatement)
+	{
+		m_vmFs << m_expressionStack.back() << std::endl;
+		m_vmFs << "not" << std::endl;
+		m_vmFs << "if-goto endloop" << m_loopStack.back() << std::endl;
+
+		m_atWhileStatement = false;
+	}
+	else if (m_atIfStatement)
+	{
+		m_vmFs << m_expressionStack.back() << std::endl;
+		m_vmFs << "not" << std::endl;
+		m_vmFs << "if-goto else" << m_ifStack.back() << std::endl;
+
+		m_atIfStatement = false;
+	}
 }
 
 void
@@ -190,6 +211,11 @@ VmCompiler::endCompileDo()
 
 	m_vmFs << "// end do" << std::endl;
 	m_vmFs << expression << std::endl;
+
+	/*
+	 * Discard unwanted return value, as described on page 235.
+	 */
+	m_vmFs << "pop temp 0" << std::endl;
 }
 
 void
@@ -215,12 +241,23 @@ VmCompiler::endCompileLet()
 void
 VmCompiler::beginCompileWhile()
 {
-		m_vmFs << "// while" << std::endl;
+	m_vmFs << "// while" << std::endl;
+
+	m_labelCounter++;
+	m_vmFs << "label loop" << m_labelCounter << std::endl;
+
+	m_loopStack.push_back(m_labelCounter);
+	m_atWhileStatement = true;
 }
 
 void
 VmCompiler::endCompileWhile()
 {
+	m_vmFs << "// end while" << std::endl;
+
+	m_vmFs << "goto loop" << m_loopStack.back() << std::endl;
+	m_vmFs << "label endloop" << m_loopStack.back() << std::endl;
+	m_loopStack.pop_back();
 }
 
 void
@@ -228,25 +265,51 @@ VmCompiler::beginCompileReturnStatement()
 {
 	m_vmFs << "// beginCompileReturnStatement" << std::endl;
 	m_inReturnStatement = true;
+	m_hasReturnExpression = false;
 }
 
 void
 VmCompiler::endCompileReturnStatement()
 {
 	m_inReturnStatement = false;
+	if (m_hasReturnExpression)
+	{
+		m_vmFs << m_expressionStack.back() << std::endl;
+		m_expressionStack.pop_back();
+	}
+	else
+	{
+		m_vmFs << "push constant 0" << std::endl;
+	}
 	m_vmFs << "return" << std::endl;
 }
 
 void
 VmCompiler::beginCompileIf()
 {
-		m_vmFs << "// if" << std::endl;
+	m_vmFs << "// if" << std::endl;
+	m_labelCounter++;
+	m_ifStack.push_back(m_labelCounter);
+	m_atIfStatement = true;
 }
 
 void
 VmCompiler::endCompileIf()
 {
-		m_vmFs << "// end if" << std::endl;
+	m_vmFs << "// end if" << std::endl;
+
+	/*
+	 * Add a label to jump to if there was no 'else' clause.
+	 */
+	if (m_elseStack.size() == 0)
+		m_vmFs << "label else" << m_ifStack.back() << std::endl;
+	else if (m_elseStack.back() != m_ifStack.back())
+		m_vmFs << "label else" << m_ifStack.back() << std::endl;
+	else
+		m_elseStack.pop_back();
+
+	m_vmFs << "label endif" << m_ifStack.back() << std::endl;
+	m_ifStack.pop_back();
 }
 
 void
@@ -254,6 +317,9 @@ VmCompiler::beginCompileExpression()
 {
 	m_expressionStack.push_back("beginCompileExpression");
 	printExpressionStack();
+
+	if (m_inReturnStatement)
+		m_hasReturnExpression = true;
 }
 
 void
@@ -406,6 +472,12 @@ VmCompiler::compileTerm(JackTokenizer::KEYWORD_TYPE keyword)
 	{
 		m_atClass = true;
 	}
+	else if (keyword == JackTokenizer::K_ELSE)
+	{
+		m_vmFs << "goto endif" << m_ifStack.back() << std::endl;
+		m_vmFs << "label else" << m_ifStack.back() << std::endl;
+		m_elseStack.push_back(m_ifStack.back());
+	}
 	else if (keyword == JackTokenizer::K_NULL)
 	{
 		m_expressionStack.push_back("push constant 0");
@@ -493,6 +565,16 @@ VmCompiler::compileTerm(char term)
 		m_expressionStack.push_back("call Math.divide 2");
 		printExpressionStack();
 	}
+	else if (term == '&')
+	{
+		m_expressionStack.push_back("and");
+		printExpressionStack();
+	}
+	else if (term == '|')
+	{
+		m_expressionStack.push_back("or");
+		printExpressionStack();
+	}
 	else if (term == ',')
 	{
 		m_vmFs << "// ," << std::endl;
@@ -500,13 +582,25 @@ VmCompiler::compileTerm(char term)
 	else if (term == '~')
 	{
 		m_expressionStack.push_back("not");
+		printExpressionStack();
 		evaluateExpressionStack();
 		printExpressionStack();
 	}
 	else if (term == '=')
 	{
+		if (!m_atLetLeftHandSide)
+			m_expressionStack.push_back("eq");
+
 		m_atLetLeftHandSide = false;
 		m_vmFs << "// =" << std::endl;
+	}
+	else if (term == '>')
+	{
+		m_expressionStack.push_back("gt");
+	}
+	else if (term == '<')
+	{
+		m_expressionStack.push_back("lt");
 	}
 	else
 	{
@@ -585,13 +679,14 @@ VmCompiler::compileIntConst(int32_t value)
 void
 VmCompiler::evaluateExpressionStack()
 {
-	if (m_expressionStack.back() == "not")
+	if (m_expressionStack.size() > 1 &&
+		m_expressionStack.at(m_expressionStack.size() - 2) == "not")
 	{
 		/*
-		 * Replace top two elements <expr> <not> with single <expr not>.
+		 * Replace top two elements <not> <expr> with single <expr not>.
 		 */
-		m_expressionStack.pop_back();
 		std::string expression = m_expressionStack.back();
+		m_expressionStack.pop_back();
 		m_expressionStack.pop_back();
 
 		std::ostringstream os;
@@ -630,15 +725,34 @@ VmCompiler::evaluateExpressionStack()
 	}
 	else if (m_expressionStack.size() > 2)
 	{
-		/*
-		 * Replace top three elements <expr1> <op> <expr2>
-		 * with single <expr1 expr2 op>.
-		 */
 		std::string op = m_expressionStack.at(m_expressionStack.size() - 2);
 
-		if (op == "add" || op == "sub" ||
+		if (op == "sub" &&
+			m_expressionStack.at(m_expressionStack.size() - 3) == "beginCompileExpression")
+		{
+			/*
+			 * We now know that we have a negative number.
+			 * Replace top two elements <sub> <expr2>
+			 * with single <expr neg>.
+			 */
+			std::string expression = m_expressionStack.back();
+			m_expressionStack.pop_back();
+			m_expressionStack.pop_back();
+
+			std::ostringstream os;
+			os << expression << std::endl;
+			os << "neg";
+			m_expressionStack.push_back(os.str());
+		}
+		else if (op == "add" || op == "sub" ||
+			op == "and" || op == "or" ||
+			op == "lt" || op == "eq" || op == "gt" ||
 			op == "call Math.multiply 2" || op == "call Math.divide 2")
 		{
+			/*
+			 * Replace top three elements <expr1> <op> <expr2>
+			 * with single <expr1 expr2 op>.
+			 */
 			std::string expression1 = m_expressionStack.at(m_expressionStack.size() - 3);
 			std::string expression2 = m_expressionStack.back();
 
