@@ -132,6 +132,38 @@ VmCompiler::endCompileExpressionList()
 	std::ostringstream os;
 	unsigned int exprIndex = index + 1;
 	int argCount = 0;
+	size_t dotIndex = functionName.find_first_of('.');
+	if (dotIndex == std::string::npos)
+	{
+		/*
+		 * This is a method call on current object.
+		 * Pass 'this' on stack.
+		 */
+		os << "push pointer 0" << std::endl;
+		argCount++;
+
+		functionName = m_className + "." +  functionName;
+	}
+	else
+	{
+		int kind = m_symbolTable.kindOf(functionName.substr(0, dotIndex));
+		if (kind != -1)
+		{
+			int index = m_symbolTable.indexOf(functionName.substr(0, dotIndex));
+			std::string typeOf = m_symbolTable.typeOf(functionName.substr(0, dotIndex));
+			functionName = typeOf + functionName.substr(dotIndex);
+
+			if (kind == JackTokenizer::K_VAR)
+				os << "push local " << index << std::endl;
+			else if (kind == JackTokenizer::K_ARG)
+				os << "push arg " << index << std::endl;
+			else if (kind == JackTokenizer::K_FIELD)
+				os << "push this " << index << std::endl;
+			else if (kind == JackTokenizer::K_STATIC)
+				os << "push static " << index << std::endl;
+			argCount++;
+		}
+	}
 	while (exprIndex < m_expressionStack.size())
 	{
 		os << m_expressionStack.at(exprIndex) << std::endl;
@@ -150,27 +182,54 @@ VmCompiler::endCompileExpressionList()
 void
 VmCompiler::beginCompileVarDec()
 {
-	m_vmFs << "// beginVarDec" << std::endl;
 	m_inVarDec = true;
 }
 
 void
 VmCompiler::endCompileVarDec()
 {
-	m_vmFs << "// endVarDec" << std::endl;
 	m_inVarDec = false;
 }
 
 void
 VmCompiler::beginCompileStatements()
 {
-	m_vmFs << "// beginStatements" << std::endl;
-
 	if (m_atSubroutineStatements)
 	{
-		m_vmFs << "function " << m_className <<
-			"." << m_methodName <<  " " <<
-			m_symbolTable.varCount(JackTokenizer::K_VAR) << std::endl;
+		int32_t varCount = m_symbolTable.varCount(JackTokenizer::K_VAR);
+		m_vmFs << "function ";
+		if (m_subroutineType == JackTokenizer::K_METHOD)
+		{
+			/*
+			 * 'this' object pointer will also be passed on stack.
+			 */
+			varCount++;
+		}
+
+		m_vmFs << m_className << "." << m_functionName <<
+			" " << varCount << std::endl;
+
+		if (m_subroutineType == JackTokenizer::K_METHOD)
+		{
+			/*
+			 * Set 'this' pointer.
+			 */
+			m_vmFs << "push argument 0" << std::endl;
+			m_vmFs << "pop pointer 0" << std::endl;
+		}
+		else if (m_subroutineType == JackTokenizer::K_CONSTRUCTOR)
+		{
+			/*
+			 * Defining a constructor.
+			 * Allocate enough memory to hold all fields of new object
+			 * and store address in 'this'.
+			 */
+			int32_t byteCount =
+				m_symbolTable.varCount(JackTokenizer::K_FIELD) * 2;
+			m_vmFs << "push constant " << byteCount << std::endl;
+			m_vmFs << "call Memory.alloc 1" << std::endl;
+			m_vmFs << "pop pointer 0" << std::endl;
+		}
 		m_atSubroutineStatements = false;
 	}
 	else if (m_atWhileStatement)
@@ -194,7 +253,6 @@ VmCompiler::beginCompileStatements()
 void
 VmCompiler::endCompileStatements()
 {
-	m_vmFs << "// endStatements" << std::endl;
 }
 
 void
@@ -325,8 +383,6 @@ VmCompiler::beginCompileExpression()
 void
 VmCompiler::endCompileExpression()
 {
-	m_vmFs << "// endCompileExpression" << std::endl;
-
 	/*
 	 * Replace <beginCompileExpression> <expr> with just <expr>.
 	 */
@@ -378,7 +434,7 @@ VmCompiler::compileIdentifier(const std::string &identifier)
 		}
 		m_vmFs << "type: " << m_subroutineVarType << ": " <<
 			identifier << std::endl;
-		m_methodName = identifier;
+		m_functionName = identifier;
 		m_atSubroutineName = false;
 		m_atSubroutineStatements = true;
 	}
@@ -409,8 +465,6 @@ VmCompiler::compileIdentifier(const std::string &identifier)
 		if (kind == JackTokenizer::K_VAR)
 		{
 			int32_t index = m_symbolTable.indexOf(identifier);
-			m_vmFs << "// var reference: " << identifier <<
-				" index: " << index << std::endl;
 			std::ostringstream os;
 			os << direction << " local " << index;
 			m_expressionStack.push_back(os.str());
@@ -420,8 +474,6 @@ VmCompiler::compileIdentifier(const std::string &identifier)
 		else if (kind == JackTokenizer::K_FIELD)
 		{
 			int32_t index = m_symbolTable.indexOf(identifier);
-			m_vmFs << "// field reference: " << identifier <<
-				" index: " << index << std::endl;
 			std::ostringstream os;
 			os << direction << " this " << index;
 			m_expressionStack.push_back(os.str());
@@ -431,8 +483,14 @@ VmCompiler::compileIdentifier(const std::string &identifier)
 		else if (kind == JackTokenizer::K_ARG)
 		{
 			int32_t index = m_symbolTable.indexOf(identifier);
-			m_vmFs << "// arg reference: " << identifier <<
-				" index: " << index << std::endl;
+			if (m_subroutineType == JackTokenizer::K_METHOD)
+			{
+				/*
+				 * 'this' object reference is passed on stack
+				 * before method arguments.
+				 */
+				index++;
+			}
 			std::ostringstream os;
 			os << direction << " argument " << index;
 			m_expressionStack.push_back(os.str());
@@ -442,7 +500,6 @@ VmCompiler::compileIdentifier(const std::string &identifier)
 		else
 		{
 			m_identifier += identifier;
-			m_vmFs << "// identifier reference: " << m_identifier << std::endl;
 		}
 	}
 }
@@ -477,6 +534,11 @@ VmCompiler::compileTerm(JackTokenizer::KEYWORD_TYPE keyword)
 		m_vmFs << "goto endif" << m_ifStack.back() << std::endl;
 		m_vmFs << "label else" << m_ifStack.back() << std::endl;
 		m_elseStack.push_back(m_ifStack.back());
+	}
+	else if (keyword == JackTokenizer::K_THIS)
+	{
+		m_expressionStack.push_back("push pointer 0");
+		evaluateExpressionStack();
 	}
 	else if (keyword == JackTokenizer::K_NULL)
 	{
@@ -516,7 +578,6 @@ VmCompiler::compileTerm(char term)
 	if (term == '.')
 	{
 		m_identifier += term;
-		m_vmFs << "// identifier reference: " << m_identifier << std::endl;
 	}
 	else if (term == '(')
 	{
@@ -637,7 +698,7 @@ VmCompiler::compileTerm(const std::string &term)
 		}
 		m_vmFs << "type: " << m_subroutineVarType << ": " <<
 			term << std::endl;
-		m_methodName = term;
+		m_functionName = term;
 		m_atSubroutineName = false;
 		m_atSubroutineStatements = true;
 	}
@@ -651,7 +712,6 @@ VmCompiler::compileTerm(const std::string &term)
 	}
 	else
 	{
-		m_vmFs << "// term reference: " << term << std::endl;
 		m_identifier += term;
 	}
 }

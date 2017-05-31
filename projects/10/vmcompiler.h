@@ -107,7 +107,7 @@ private:
 
 	JackTokenizer::KEYWORD_TYPE m_subroutineType;
 	std::string m_className;
-	std::string m_methodName;
+	std::string m_functionName;
 	std::string m_varType;
 	std::string m_classVarType;
 	std::string m_subroutineVarType;
