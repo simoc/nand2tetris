@@ -720,7 +720,23 @@ void
 VmCompiler::compileStringConst(const std::string &value)
 {
 	std::ostringstream os;
-	os << "push constant \"" << value << "\"";
+
+	m_vmFs << "// \"" << value << "\"" << std::endl;
+
+	/*
+	 * Allocate memory for string.
+	 * Leave pointer to String on stack and add each character to string.
+	 */
+	os << "push constant " << value.size() << std::endl;
+	os << "call String.new 1" << std::endl;
+
+	for (unsigned int i = 0; i < value.size(); i++)
+	{
+		os << "push constant " << int32_t(value.at(i)) << std::endl;
+		os << "call String.appendChar 2";
+		if (i < value.size() - 1)
+			os << std::endl;
+	}
 	m_expressionStack.push_back(os.str());
 	evaluateExpressionStack();
 	printExpressionStack();
