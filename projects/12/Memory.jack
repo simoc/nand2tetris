@@ -1,0 +1,168 @@
+/**
+ * Memory operations library.
+ */ 
+class Memory
+{
+	static int freeList;
+
+    /** Initializes memory parameters. */
+    function void init()
+	{
+		var int freeListLength;
+		var int freeListNext;
+
+		let freeList = 2048;
+		let freeListLength = 16384 - 2048 - 2;
+		let freeListNext = 0;
+		do Memory.poke(freeList, freeListLength);
+		do Memory.poke(freeList + 1, freeListNext);
+		return;
+    }
+
+    /** Returns the value of the main memory at the given address. */
+    function int peek(int address)
+	{
+		var Array memory;
+		let memory = 0;
+		return memory[address];
+    }
+
+    /** Sets the value of the main memory at this address
+     *  to the given value. */
+    function void poke(int address, int value)
+	{
+		var Array memory;
+		let memory = 0;
+		let memory[address] = value;
+		return;
+    }
+
+    /** finds and allocates from the heap a memory block of the 
+     *  specified size and returns a reference to its base address. */
+    function int alloc(int size)
+	{
+		var int address;
+		var int prevAddress;
+		var int bestSize;
+		var int bestAddress;
+		var int bestPrevAddress;
+		var int nextAddress;
+		var int blockSize;
+
+		let address = freeList;
+		let prevAddress = 0;
+		let bestSize = 32767;
+		let bestAddress = 0;
+		let bestPrevAddress = 0;
+
+		/*
+		 * Search through free list for smallest block that is big enough.
+		 */
+		while (~(address = 0))
+		{
+			/*
+			 * We need 2 extra addresses for list management
+			 * of each block.
+			 */
+			let blockSize = Memory.peek(address);
+			if (blockSize > (size + 1))
+			{
+				if (blockSize < bestSize)
+				{
+					let bestSize = blockSize;
+					let bestAddress = address;
+					let bestPrevAddress = prevAddress;
+				}
+			}
+			let prevAddress = address;
+			let address = Memory.peek(address + 1);
+		}
+
+		if (bestSize = 32767)
+		{
+			//TODO defragment list so bigger blocks become available.
+
+			/*
+			 * No free memory block big enough.
+			 * Allocation failed.
+			 */
+			let bestAddress = 0;
+		}
+		else
+		{
+			if (bestSize = (size + 2))
+			{
+				/*
+				 * Best block is exactly the right size.
+				 * Remove this memory block from list.
+				 */
+				let nextAddress = Memory.peek(bestAddress);
+				if (bestAddress = freeList)
+				{
+					/*
+					 * Point start of list to second memory block
+					 * to remove first memory block from list.
+					 */
+					let freeList = nextAddress;
+				}
+				else
+				{
+					do Memory.poke(bestPrevAddress, nextAddress);
+				}
+
+				/*
+				 * Jump over two addresses used for list management.
+				 */
+				let bestAddress = bestAddress + 2;
+			}
+			else
+			{
+				/*
+				 * Allocate bytes at end of memory block
+				 * and reduce size of memory block.
+				 */
+				do Memory.poke(bestAddress, bestSize - (size + 2));
+				let bestAddress = bestAddress + (bestSize - size);
+			}
+		}
+		return bestAddress;
+    }
+
+    /** De-allocates the given object and frees its space. */
+    function void deAlloc(int object)
+	{
+		var int address;
+		var int prevAddress;
+
+		let address = freeList;
+		let prevAddress = 0;
+
+		/*
+		 * Search for correct position to insert freed block.
+		 */
+		let object = object - 2;
+		while ((address > 0) & (object < address))
+		{
+			let prevAddress = address;
+			let address = Memory.peek(address + 1);
+		}
+
+		if (prevAddress = 0)
+		{
+			/*
+			 * Block being freed becomes head of list.
+			 */
+			do Memory.poke(object + 1, freeList);
+			let freeList = object;
+		}
+		else
+		{
+			/*
+			 * Add links to include freed block in list.
+			 */
+			do Memory.poke(prevAddress + 1, object);
+			do Memory.poke(object + 1, address);
+		}
+		return;
+    }
+}
