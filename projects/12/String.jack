@@ -1,0 +1,169 @@
+/**
+ * Represents a String object. Implements the String type.
+ */
+class String
+{
+	field int currentLength;
+	field int maximumLength;
+	field Array chars;
+
+	/** Constructs a new empty String with a maximum length of maxLength. */
+	constructor String new(int maxLength)
+	{
+		let currentLength = 0;
+		let maximumLength = maxLength;
+		let chars = Memory.alloc(maxLength);
+		return this;
+	}
+
+	/** De-allocates the string and frees its space. */
+	method void dispose()
+	{
+		do Memory.deAlloc(chars);
+		return;
+	}
+
+	/** Returns the current length of this String. */
+	method int length()
+	{
+		return currentLength;
+	}
+
+	/** Returns the character at location j. */
+	method char charAt(int j)
+	{
+		var int c;
+
+		if (j < maximumLength)
+		{
+			let c = chars[j];
+		}
+		else
+		{
+			let c = 33;
+		}
+		return c;
+	}
+
+	/** Sets the j'th character of this string to be c. */
+	method void setCharAt(int j, char c)
+	{
+		if (j < maximumLength)
+		{
+			let chars[j] = c;
+		}
+		return;
+	}
+
+	/** Appends the character c to the end of this String.
+	 *  Returns this string as the return value. */
+	method String appendChar(char c)
+	{
+		// TODO what to do if string length exceeded?
+		if (currentLength < maximumLength)
+		{
+			let chars[currentLength] = c;
+			let currentLength = currentLength + 1;
+		}
+		return this;
+	}
+
+	/** Erases the last character from this String. */
+	method void eraseLastChar()
+	{
+		if (currentLength > 0)
+		{
+			let currentLength = currentLength - 1;
+		}
+		return;
+	}
+
+	/** Returns the integer value of this String until the first non
+	 *  numeric character. */
+	method int intValue()
+	{
+		return 0;
+	}
+
+	/** Sets this String to hold a representation of the given number. */
+	method void setInt(int number)
+	{
+		var int digit;
+
+		let currentLength = 0;
+		if (number < 0)
+		{
+			do appendChar(45);
+			let number = -number;
+		}
+
+		let digit = Math.divide(number, 10000);
+		if (digit > 0)
+		{
+			do appendChar(48 + digit);
+			while (digit > 0)
+			{
+				let number = number - 10000;
+				let digit = digit - 1;
+			}
+		}
+
+		let digit = Math.divide(number, 1000);
+		if (digit > 0)
+		{
+			do appendChar(48 + digit);
+			while (digit > 0)
+			{
+				let number = number - 1000;
+				let digit = digit - 1;
+			}
+		}
+
+		let digit = Math.divide(number, 100);
+		if (digit > 0)
+		{
+			do appendChar(48 + digit);
+			while (digit > 0)
+			{
+				let number = number - 100;
+				let digit = digit - 1;
+			}
+		}
+
+		let digit = Math.divide(number, 10);
+		if (digit > 0)
+		{
+			do appendChar(48 + digit);
+			while (digit > 0)
+			{
+				let number = number - 10;
+				let digit = digit - 1;
+			}
+		}
+
+		if (number > 0)
+		{
+			do appendChar(48 + number);
+		}
+
+		return;
+	}
+
+	/** Returns the new line character. */
+	function char newLine()
+	{
+		return 128;
+	}
+
+	/** Returns the backspace character. */
+	function char backSpace()
+	{
+		return 129;
+	}
+
+	/** Returns the double quote (") character. */
+	function char doubleQuote()
+	{
+		return 34;
+	}
+}
