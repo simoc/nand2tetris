@@ -70,7 +70,7 @@ class Output
 		do Output.create(64,30,51,51,59,59,59,27,3,30,0,0);  // @
 		do Output.create(63,30,51,51,24,12,12,0,12,12,0,0);  // ?
 
-		do Output.create(65,0,0,0,0,0,0,0,0,0,0,0);		  // A ** TO BE FILLED **
+		do Output.create(65,12,46,51,51,63,51,51,51,51,0,0);		  // A ** TO BE FILLED **
 		do Output.create(66,31,51,51,51,31,51,51,51,31,0,0); // B
 		do Output.create(67,28,54,35,3,3,3,35,54,28,0,0);	// C
 		do Output.create(68,15,27,51,51,51,51,51,27,15,0,0); // D
@@ -175,12 +175,43 @@ class Output
 		return charMaps[c];
 	}
 
+	function void setScreen(int c)
+	{
+		var Array charMap;
+		var int k;
+		var int col2;
+		var int address;
+		var int b;
+
+		let charMap = Output.getMap(c);
+		let k = 0;
+		while (k < 11)
+		{
+			let col2 = col / 2; // 2 characters at each address
+			let address = 16384 + (((row * 11) + k) * 32) + col2;
+			let b = Memory.peek(address);
+
+			// Updating low or high byte of address?
+			if ((col - col2 - col2) = 0)
+			{
+				let b = (b & (-256)); // -256 is 0xff00
+				let b = (b | charMap[k]);
+			}
+			else
+			{
+				let b = (b & 255);
+				let b = (b | (charMap[k] * 256));
+			}
+			do Memory.poke(address, b);
+			let k = k + 1;
+		}
+		return;
+	}
+
 	/** Moves the cursor to the j'th column of the i'th row,
 	 *  and erases the character that was there. */
 	function void moveCursor(int i, int j)
 	{
-		var int i;
-
 		let row = i;
 		let col = j;
 		if (row < 0)
@@ -199,13 +230,7 @@ class Output
 		{
 			let col = 63;
 		}
-
-		let i = 0;
-		while (i < 11)
-		{
-			do Memory.poke(16384 + (row * 512) + (col * 8), 0);
-			let i = i + 1;
-		}
+		do Output.setScreen(32);
 		return;
 	}
 
@@ -213,18 +238,9 @@ class Output
 	 *  column forward. */
 	function void printChar(char c)
 	{
-		var Array charMap;
-		var int i;
-
-		let charMap = Output.getMap(c);
-		let i = 0;
-		while (i < 11)
-		{
-			do Memory.poke(16384 + (row * 512) + (col * 8), charMap[i]);
-			let i = i + 1;
-		}
+		do Output.setScreen(c);
 		let col = col + 1;
-		if (col > 80)
+		if (col > 63)
 		{
 			let col = 0;
 			let row = row + 1;
