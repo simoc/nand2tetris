@@ -1,0 +1,183 @@
+/**
+ * A basic math library.
+ */
+class Math
+{
+    /** Initializes the library. */
+    function void init()
+	{
+		return;
+    }
+
+    /** Returns the absolute value of x. */
+    function int abs(int x)
+	{
+		if (x < 0)
+		{
+			let x = -x;
+		}
+		return x;
+    }
+
+    /** Returns the product of x and y. */
+    function int multiply(int x, int y)
+	{
+		var int swap;
+		var int counter;
+		var int limit;
+		var int sum;
+		var int x16;
+		var int x256;
+
+		if (Math.abs(x) < Math.abs(y))
+		{
+			/*
+			 * Minimise number of repeated additions.
+			 */
+			let swap = x;
+			let x = y;
+			let y = swap;
+		}
+
+		let counter = 0;
+		let sum = 0;
+		let limit = Math.abs(y);
+
+		while (counter < limit)
+		{
+			if (counter = 256)
+			{
+				let x256 = sum;
+			}
+			if ((counter > 255) & (counter + 256 < limit))
+			{
+				/*
+				 * Add "256 * x" to reduce repeated additions.
+				 */
+				let sum = sum + x256;
+				let counter = counter + 256;
+			}
+			else
+			{
+				if (counter = 16)
+				{
+					let x16 = sum;
+				}
+				if ((counter > 15) & (counter + 16 < limit))
+				{
+					/*
+					 * Add "16 * x" to reduce repeated additions.
+					 */
+					let sum = sum + x16;
+					let counter = counter + 16;
+				}
+				else
+				{
+					let sum = sum + x;
+					let counter = counter + 1;
+				}
+			}
+		}
+
+		if (y < 0)
+		{
+			let sum = -sum;
+		}
+		return sum;
+    }
+
+    /** Returns the integer part of x/y. */
+    function int divide(int x, int y)
+	{
+		var int counter;
+		var int ax;
+		var int ay;
+		var int ay16;
+
+		let ax = Math.abs(x);
+		let ay = Math.abs(y);
+		let counter = 0;
+		if (ay > 0)
+		{
+			while (~(ax < ay))
+			{
+				// TODO implement long division algorithm
+
+				let ax = ax - ay;
+				let counter = counter + 1;
+			}
+		}
+
+		if (((x > 0) & (y < 0)) | ((x < 0) & (y > 0)))
+		{
+			let counter = -counter;
+		}
+		return counter;
+    }
+
+    /** Returns the integer part of the square root of x. */
+    function int sqrt(int x)
+	{
+		var int lower;
+		var int upper;
+		var int mid;
+		var int sqMid;
+
+		let lower = 0;
+		let upper = 182; /* 181 * 181 = 32761 is largest possible result */
+
+		if (x > 0)
+		{
+			while (true)
+			{
+				let mid = (lower + upper) / 2;
+				let sqMid = mid * mid;
+				if (sqMid < x)
+				{
+					let lower = mid;
+				}
+				else
+				{
+					if (sqMid = x)
+					{
+						return mid;
+					}
+					else
+					{
+						let upper = mid;
+					}
+				}
+				if ((lower + 1) = upper)
+				{
+					/*
+					 * Lower value squared is less than x.
+					 * Upper value squared is greater than x.
+					 * So return lower value.
+					 */
+					return lower;
+				}
+			}
+		}
+		return 0;
+    }
+
+    /** Returns the greater number. */
+    function int max(int a, int b)
+	{
+		if (a > b)
+		{
+			return a;
+		}
+		return b;
+    }
+
+    /** Returns the smaller number. */
+    function int min(int a, int b)
+	{
+		if (a < b)
+		{
+			return a;
+		}
+		return b;
+    }
+}
