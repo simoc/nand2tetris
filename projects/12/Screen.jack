@@ -1,0 +1,248 @@
+/**
+ * Graphic screen library.
+ */
+class Screen
+{
+	/*  white = false, black = true */
+	static boolean color;
+
+	/** Initializes the Screen. */
+	function void init()
+	{
+		let color = true;
+		return;
+	}
+
+	/** Erases the whole screen. */
+	function void clearScreen()
+	{
+		var int counter;
+
+		let counter = 0;
+		while (counter < 32 * 256)
+		{
+			do Memory.poke(16384 + counter, 0);
+			let counter = counter + 1;
+		}
+		return;
+	}
+
+	/** Sets the color to be used in further draw commands
+	 *  where white = false, black = true. */
+	function void setColor(boolean b)
+	{
+		let color = b;
+		return;
+	}
+
+	/** Draws the (x, y) pixel. */
+	function void drawPixel(int x, int y)
+	{
+		var int address;
+		var int xHigh;
+		var int xLow;
+		var int i;
+		var int b;
+		var int mask;
+
+		// 32 x 16 bit words = 512 pixels on each row
+		let xHigh = x / 16;
+		let xLow = x - (xHigh * 16);
+		let address = 16384 + (y * 32) + xHigh;
+		let i = 0;
+		let mask = 1;
+		while (i < xLow)
+		{
+			let mask = mask + mask;
+			let i = i + 1;
+		}
+
+		let b = Memory.peek(address);
+		if (color)
+		{
+			let b = (b | mask);
+		}
+		else
+		{
+			let b = (b & (~mask));
+		}
+		do Memory.poke(address, b);
+		return;
+	}
+
+	/** Draws a horizonal line from (x1, y) to (x2, y). */
+	function void drawHorizontalLine(int x1, int x2, int y)
+	{
+		// TODO this is most efficient way to draw lines, 16 pixels at a time.
+		return;
+	}
+
+	/** Draws a vertical line from (x, y1) to (x, y2). */
+	function void drawVerticalLine(int x, int y1, int y2)
+	{
+		var int swap;
+		var int address;
+		var int xHigh;
+		var int xLow;
+		var int i;
+		var int b;
+		var int mask;
+
+		if (y1 > y2)
+		{
+			let swap = y1;
+			let y1 = y2;
+			let y2 = y1;
+		}
+
+		// 32 x 16 bit words = 512 pixels on each row
+		let xHigh = x / 16;
+		let xLow = x - (xHigh * 16);
+		let address = 16384 + (y1 * 32) + xHigh;
+		let i = 0;
+		let mask = 1;
+		while (i < xLow)
+		{
+			let mask = mask + mask;
+			let i = i + 1;
+		}
+
+		while (~(y1 > y2))
+		{
+			let b = Memory.peek(address);
+			if (color)
+			{
+				let b = (b | mask);
+			}
+			else
+			{
+				let b = (b & (~mask));
+			}
+			do Memory.poke(address, b);
+			let y1 = y1 + 1;
+			let address = address + 32;
+		}
+		return;
+	}
+
+	function int sign(int n)
+	{
+		if (n > 0)
+		{
+			return 1;
+		}
+		if (n < 0)
+		{
+			return -1;
+		}
+		return 0;
+	}
+
+	/** Draws a line from (x1, y1) to (x2, y2). */
+	function void drawLine(int x1, int y1, int x2, int y2)
+	{
+		var int x, y;
+		var int dx, dy;
+		var int s1, s2;
+		var boolean swap;
+		var int temp;
+		var int p, i;
+
+		// Bresenham line algorithm
+		let x = x1;
+		let y = y1;
+		let dx = Math.abs(x2 - x1);
+		let s1 = Screen.sign(x2 - x1);
+		let dy = Math.abs(y2 - y1);
+		let s2 = Screen.sign(y2 - y1);
+
+		let swap = false;
+		if (dy > dx)
+		{
+			let temp = dx;
+			let dx = dy;
+			let dy = temp;
+			let swap = true;
+		}
+
+		let p = (2 * dy) - dx;
+		let i = 0;
+		while (i < dx)
+		{
+			do Screen.drawPixel(x, y);
+			while (~(p < 0))
+			{
+				let p = p - (2 * dx);
+				if (swap)
+				{
+					let x = x + s1;
+				}
+				else
+				{
+					let y = y + s2;
+				}
+			}
+			let p = p + (2 * dy);
+			if (swap)
+			{
+				let y = y + s2;
+			}
+			else
+			{
+				let x = x + s1;
+			}
+			let i = i + 1;
+		}
+		do Screen.drawPixel(x2, y2);
+
+		return;
+	}
+
+	/** Draws a filled rectangle where the top left corner
+	 *  is (x1, y1) and the bottom right corner is (x2, y2). */
+	function void drawRectangle(int x1, int y1, int x2, int y2)
+	{
+		var int x;
+
+		let x = x1;
+		while (~(x > x2))
+		{
+			do Screen.drawVerticalLine(x, y1, y2);
+			let x = x + 1;
+		}
+		return;
+	}
+
+	/** Draws a filled circle of radius r around (cx, cy). */
+	function void drawCircle(int x0, int y0, int radius)
+	{
+		var int x;
+		var int y;
+		var int err;
+
+		let x = radius;
+		let y = 0;
+		let err = 0;
+
+		while (~(x < y))
+		{
+			do Screen.drawLine(x0 - x, y0 + y, x0 + x, y0 + y);
+			do Screen.drawLine(x0 - x, y0 - y, x0 + x, y0 - y);
+
+			do Screen.drawLine(x0 - y, y0 + x, x0 + y, y0 + x);
+			do Screen.drawLine(x0 - y, y0 - x, x0 + y, y0 - x);
+
+			let y = y + 1;
+			if (~(err > 0))
+			{
+				let err = err + ((2*y) + 1);
+			}
+			if (err > 0)
+			{
+				let x = x - 1;
+				let err = err - ((2*x) + 1);
+			}
+		}
+		return;
+	}
+}
