@@ -19,71 +19,33 @@ class Math
 		return x;
     }
 
+	function int multiplyRecursive(int x, int y, int n, int power2, int xAccumulator)
+	{
+		var int total;
+
+		let total = 0;
+		if (~((y & power2) = 0))
+		{
+			/*
+			 * If bit N is set in y, then add x*(2^N).
+			 */
+			let total = xAccumulator;
+		}
+
+		/*
+		 * Add all higher powers of 2 too.
+		 */
+		if (n < 15)
+		{
+			let total = total + Math.multiplyRecursive(x, y, n + 1, power2 + power2, xAccumulator + xAccumulator);
+		}
+		return total;
+	}
+
     /** Returns the product of x and y. */
     function int multiply(int x, int y)
 	{
-		var int swap;
-		var int counter;
-		var int limit;
-		var int sum;
-		var int x16;
-		var int x256;
-
-		if (Math.abs(x) < Math.abs(y))
-		{
-			/*
-			 * Minimise number of repeated additions.
-			 */
-			let swap = x;
-			let x = y;
-			let y = swap;
-		}
-
-		let counter = 0;
-		let sum = 0;
-		let limit = Math.abs(y);
-
-		while (counter < limit)
-		{
-			if (counter = 256)
-			{
-				let x256 = sum;
-			}
-			if ((counter > 255) & (counter + 256 < limit))
-			{
-				/*
-				 * Add "256 * x" to reduce repeated additions.
-				 */
-				let sum = sum + x256;
-				let counter = counter + 256;
-			}
-			else
-			{
-				if (counter = 16)
-				{
-					let x16 = sum;
-				}
-				if ((counter > 15) & (counter + 16 < limit))
-				{
-					/*
-					 * Add "16 * x" to reduce repeated additions.
-					 */
-					let sum = sum + x16;
-					let counter = counter + 16;
-				}
-				else
-				{
-					let sum = sum + x;
-					let counter = counter + 1;
-				}
-			}
-		}
-
-		if (y < 0)
-		{
-			let sum = -sum;
-		}
-		return sum;
+		return Math.multiplyRecursive(x, y, 0, 1, x);
     }
 
     /** Returns the integer part of x/y. */
