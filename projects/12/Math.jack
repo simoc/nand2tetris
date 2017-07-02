@@ -61,33 +61,66 @@ class Math
 		return total;
 	}
 
+    function int divideRecursive(int x, int y, int yOrig, int n, int power2)
+	{
+		var int q;
+
+		if (n > 15)
+		{
+			return 0;
+		}
+
+		if (y > x)
+		{
+			return 0;
+		}
+
+		let q = Math.divideRecursive(x, y + y, yOrig, n + 1, power2 + power2);
+		if (q > 0)
+		{
+			let x = x - Math.multiply(q, yOrig);
+		}
+
+		if (~(y > x))
+		{
+			let q = q + power2;
+		}
+
+		return q;
+	}
+
     /** Returns the integer part of x/y. */
     function int divide(int x, int y)
 	{
-		var int counter;
-		var int ax;
-		var int ay;
-		var int ay16;
+		var int yOrig;
+		var int xOrig;
+		var int q;
 
-		let ax = Math.abs(x);
-		let ay = Math.abs(y);
-		let counter = 0;
-		if (ay > 0)
+		let yOrig = y;
+		let xOrig = x;
+		if (y = 0)
 		{
-			while (~(ax < ay))
-			{
-				// TODO implement long division algorithm
-
-				let ax = ax - ay;
-				let counter = counter + 1;
-			}
+			do Sys.error(55);
+		}
+		if (y < 0)
+		{
+			let y = -y;
+		}
+		if (x < 0)
+		{
+			let x = -x;
 		}
 
-		if (((x > 0) & (y < 0)) | ((x < 0) & (y > 0)))
+		let q = Math.divideRecursive(x, y, y, 0, 1);
+		if (yOrig < 0)
 		{
-			let counter = -counter;
+			let q = -q;
 		}
-		return counter;
+		if (xOrig < 0)
+		{
+			let q = -q;
+		}
+		return q;
     }
 
     /** Returns the integer part of the square root of x. */
